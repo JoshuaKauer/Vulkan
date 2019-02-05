@@ -33,6 +33,7 @@ private:
 	std::vector<VkImageView> swapChainImageViews;
 
 	VkRenderPass renderPass;
+	VkDescriptorSetLayout descriptorSetLayout;
 	VkPipelineLayout pipelineLayout;
 
 	VkPipeline graphicsPipeline;
@@ -50,6 +51,8 @@ private:
 
 	Buffer vertexBuffer;
 	Buffer indexBuffer;
+
+	std::vector<Buffer> uniformBuffers;
 
 	bool framebufferResized = false;
 
@@ -72,6 +75,10 @@ private:
 	void CreateCommandPool();
 	void CreateCommandBuffers();
 	void CreateSyncObjects();
+	void CreateDescriptorSetLayout();
+	void CreateUniformBuffers();
+
+	void UpdateUniformBuffer(uint32_t currentImage);
 
 	void RecreateSwapChain();
 	void CleanupSwapChain();

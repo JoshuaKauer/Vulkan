@@ -22,12 +22,6 @@ void Buffer::InitializeBuffer(VkDevice& device, void* bufferData, VkDeviceSize s
 	vkFreeMemory(device, stagingBufferMemory, nullptr);
 }
 
-void Buffer::Cleanup(VkDevice& device)
-{
-	vkDestroyBuffer(device, buffer, nullptr);
-	vkFreeMemory(device, bufferMemory, nullptr);
-}
-
 void Buffer::CreateBuffer(VkDevice& device, VkDeviceSize size, VkBufferUsageFlags usage, VkMemoryPropertyFlags properties, VkBuffer& buffer, VkDeviceMemory &bufferMemory, VkPhysicalDevice& physicalDevice)
 {
 	VkBufferCreateInfo bufferInfo = {};
@@ -55,6 +49,12 @@ void Buffer::CreateBuffer(VkDevice& device, VkDeviceSize size, VkBufferUsageFlag
 	}
 
 	vkBindBufferMemory(device, buffer, bufferMemory, 0);
+}
+
+void Buffer::Cleanup(VkDevice& device)
+{
+	vkDestroyBuffer(device, buffer, nullptr);
+	vkFreeMemory(device, bufferMemory, nullptr);
 }
 
 void Buffer::CopyBuffer(VkDevice& device, VkBuffer srcBuffer, VkBuffer dstBuffer, VkDeviceSize size, VkCommandPool& commandPool, VkQueue& graphicsQueue)

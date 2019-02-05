@@ -1,5 +1,10 @@
 #include "RenderEngine.h"
 
+#define GLM_FORCE_RADIANS
+#include <glm/glm.hpp>
+#include <glm/gtc/matrix_transform.hpp>
+
+#include <chrono>
 #include <iostream>
 #include <cstdlib>
 #include <stdexcept>
@@ -11,6 +16,7 @@
 #include <array>
 
 #include "Vertex.h"
+#include "ModelViewProjection.h"
 
 const int WIDTH = 800;
 const int HEIGHT = 600;
@@ -105,6 +111,7 @@ void RenderEngine::InitVulkan()
 	CreateSwapChain();
 	CreateImageViews();
 	CreateRenderPass();
+	CreateDescriptorSetLayout();
 	CreateGraphicsPipeline();
 	CreateFramebuffers();
 	CreateCommandPool();
@@ -112,6 +119,7 @@ void RenderEngine::InitVulkan()
 		VK_BUFFER_USAGE_TRANSFER_DST_BIT | VK_BUFFER_USAGE_VERTEX_BUFFER_BIT, VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT, commandPool, graphicsQueue, physicalDevice);
 	indexBuffer.InitializeBuffer(device, indices.data(), sizeof(indices[0]) * indices.size(),
 		VK_BUFFER_USAGE_TRANSFER_DST_BIT | VK_BUFFER_USAGE_INDEX_BUFFER_BIT, VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT, commandPool, graphicsQueue, physicalDevice);
+	CreateUniformBuffers();
 	CreateCommandBuffers();
 	CreateSyncObjects();
 }
@@ -138,6 +146,40 @@ void RenderEngine::CreateSyncObjects()
 
 			throw std::runtime_error("failed to create semaphores for a frame!");
 		}
+	}
+}
+
+void RenderEngine::CreateDescriptorSetLayout()
+{
+	VkDescriptorSetLayoutBinding mvpLayoutBinding = {};
+	mvpLayoutBinding.binding = 0;
+	mvpLayoutBinding.descriptorType = VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER;
+	mvpLayoutBinding.descriptorCount = 1;
+
+	mvpLayoutBinding.stageFlags = VK_SHADER_STAGE_VERTEX_BIT;
+	mvpLayoutBinding.pImmutableSamplers = nullptr; //Optional
+
+	VkDescriptorSetLayoutCreateInfo layoutInfo = {};
+	layoutInfo.sType = VK_STRUCTURE_TYPE_DESCRIPTOR_SET_LAYOUT_CREATE_INFO;
+	layoutInfo.bindingCount = 1;
+	layoutInfo.pBindings = &mvpLayoutBinding;
+
+	if (vkCreateDescriptorSetLayout(device, &layoutInfo, nullptr, &descriptorSetLayout) != VK_SUCCESS)
+	{
+		throw std::runtime_error("failed to create descriptor set layout!");
+	}
+}
+
+void RenderEngine::CreateUniformBuffers()
+{
+	VkDeviceSize bufferSize = sizeof(ModelViewProjection);
+	
+	uniformBuffers.resize(swapChainImages.size());
+
+	for (size_t i = 0; i < swapChainImages.size(); ++i)
+	{
+		uniformBuffers[i].CreateBuffer(device, bufferSize, VK_BUFFER_USAGE_UNIFORM_BUFFER_BIT,
+			VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT | VK_MEMORY_PROPERTY_HOST_COHERENT_BIT, uniformBuffers[i].buffer, uniformBuffers[i].bufferMemory, physicalDevice);
 	}
 }
 
@@ -402,8 +444,8 @@ void RenderEngine::CreateGraphicsPipeline()
 
 	VkPipelineLayoutCreateInfo pipelineLayoutInfo = {};
 	pipelineLayoutInfo.sType = VK_STRUCTURE_TYPE_PIPELINE_LAYOUT_CREATE_INFO;
-	pipelineLayoutInfo.setLayoutCount = 0; // Optional
-	pipelineLayoutInfo.pSetLayouts = nullptr; // Optional
+	pipelineLayoutInfo.setLayoutCount = 1;
+	pipelineLayoutInfo.pSetLayouts = &descriptorSetLayout; // Optional
 	pipelineLayoutInfo.pushConstantRangeCount = 0; // Optional
 	pipelineLayoutInfo.pPushConstantRanges = nullptr; // Optional
 
@@ -647,6 +689,8 @@ void RenderEngine::DrawFrame()
 		throw std::runtime_error("failed to acquire swap chain image!");
 	}
 
+	UpdateUniformBuffer(imageIndex);
+
 	VkSubmitInfo submitInfo = {};
 	submitInfo.sType = VK_STRUCTURE_TYPE_SUBMIT_INFO;
 
@@ -696,6 +740,25 @@ void RenderEngine::DrawFrame()
 	currentFrame = (currentFrame + 1) % MAX_FRAMES_IN_FLIGHT;
 }
 
+void RenderEngine::UpdateUniformBuffer(uint32_t currentImage)
+{
+	static auto startTime = std::chrono::high_resolution_clock::now();
+
+	auto currentTime = std::chrono::high_resolution_clock::now();
+	float time = std::chrono::duration<float, std::chrono::seconds::period>(currentTime - startTime).count();
+
+	ModelViewProjection mvp = {};
+	mvp.model = glm::rotate(glm::mat4(1.0f), time * glm::radians(90.0f), glm::vec3(0.0f, 0.0f, 1.0f));
+	mvp.view = glm::lookAt(glm::vec3(2.0f, 2.0f, 2.0f), glm::vec3(0.0f, 0.0f, 0.0f), glm::vec3(0.0f, 0.0f, 1.0f));
+	mvp.proj = glm::perspective(glm::radians(45.0f), swapChainExtent.width / (float)swapChainExtent.height, 0.1f, 10.0f);
+	mvp.proj[1][1] *= -1;
+
+	void* data;
+	vkMapMemory(device, uniformBuffers[currentImage].bufferMemory, 0, sizeof(mvp), 0, &data);
+	memcpy(data, &mvp, sizeof(mvp));
+	vkUnmapMemory(device, uniformBuffers[currentImage].bufferMemory);
+}
+
 void RenderEngine::RecreateSwapChain()
 {
 	int width = 0, height = 0;
@@ -741,6 +804,13 @@ void RenderEngine::CleanupSwapChain()
 void RenderEngine::Cleanup()
 {
 	CleanupSwapChain();
+
+	vkDestroyDescriptorSetLayout(device, descriptorSetLayout, nullptr);
+
+	for (size_t i = 0; i < swapChainImages.size(); ++i)
+	{
+		uniformBuffers[i].Cleanup(device);
+	}
 	
 	indexBuffer.Cleanup(device);
 	vertexBuffer.Cleanup(device);
