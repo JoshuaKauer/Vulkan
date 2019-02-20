@@ -54,6 +54,9 @@ private:
 
 	std::vector<Buffer> uniformBuffers;
 
+	VkDescriptorPool descriptorPool;
+	std::vector<VkDescriptorSet> descriptorSets;
+
 	bool framebufferResized = false;
 
 	void InitWindow();
@@ -77,6 +80,8 @@ private:
 	void CreateSyncObjects();
 	void CreateDescriptorSetLayout();
 	void CreateUniformBuffers();
+	void CreateDescriptorPool();
+	void CreateDescriptorSets();
 
 	void UpdateUniformBuffer(uint32_t currentImage);
 
