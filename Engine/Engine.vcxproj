@@ -92,7 +92,7 @@
       <PreprocessorDefinitions>WIN32;_DEBUG;_CONSOLE;%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <ConformanceMode>true</ConformanceMode>
       <MultiProcessorCompilation>false</MultiProcessorCompilation>
-      <AdditionalIncludeDirectories>E:\Engine\Engine\Middleware\glm-0.9.9.3;E:\Engine\Engine\Middleware\glfw\include;E:\Engine\Engine\Middleware\Vulkan\Include;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+      <AdditionalIncludeDirectories>E:\Engine\Engine\Middleware\glm-0.9.9.3;E:\Engine\Engine\Middleware\glfw\include;E:\Engine\Engine\Middleware\Vulkan\Include;E:\Engine\Engine\Middleware\stb-master;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
       <LanguageStandard>stdcpp17</LanguageStandard>
     </ClCompile>
     <Link>
@@ -112,7 +112,7 @@
       <PreprocessorDefinitions>_DEBUG;_CONSOLE;%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <ConformanceMode>true</ConformanceMode>
       <MultiProcessorCompilation>false</MultiProcessorCompilation>
-      <AdditionalIncludeDirectories>E:\Engine\Engine\Middleware\glm-0.9.9.3;E:\Engine\Engine\Middleware\glfw\include;E:\Engine\Engine\Middleware\Vulkan\Include;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+      <AdditionalIncludeDirectories>E:\Engine\Engine\Middleware\glm-0.9.9.3;E:\Engine\Engine\Middleware\glfw\include;E:\Engine\Engine\Middleware\Vulkan\Include;E:\Engine\Engine\Middleware\stb-master;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
       <LanguageStandard>stdcpp17</LanguageStandard>
     </ClCompile>
     <Link>
@@ -134,7 +134,7 @@
       <PreprocessorDefinitions>WIN32;NDEBUG;_CONSOLE;%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <ConformanceMode>true</ConformanceMode>
       <MultiProcessorCompilation>false</MultiProcessorCompilation>
-      <AdditionalIncludeDirectories>E:\Engine\Engine\Middleware\glm-0.9.9.3;E:\Engine\Engine\Middleware\glfw\include;E:\Engine\Engine\Middleware\Vulkan\Include;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+      <AdditionalIncludeDirectories>E:\Engine\Engine\Middleware\glm-0.9.9.3;E:\Engine\Engine\Middleware\glfw\include;E:\Engine\Engine\Middleware\Vulkan\Include;E:\Engine\Engine\Middleware\stb-master;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
       <LanguageStandard>stdcpp17</LanguageStandard>
     </ClCompile>
     <Link>
@@ -158,7 +158,7 @@
       <PreprocessorDefinitions>NDEBUG;_CONSOLE;%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <ConformanceMode>true</ConformanceMode>
       <MultiProcessorCompilation>false</MultiProcessorCompilation>
-      <AdditionalIncludeDirectories>E:\Engine\Engine\Middleware\glm-0.9.9.3;E:\Engine\Engine\Middleware\glfw\include;E:\Engine\Engine\Middleware\Vulkan\Include;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+      <AdditionalIncludeDirectories>E:\Engine\Engine\Middleware\glm-0.9.9.3;E:\Engine\Engine\Middleware\glfw\include;E:\Engine\Engine\Middleware\Vulkan\Include;E:\Engine\Engine\Middleware\stb-master;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
       <LanguageStandard>stdcpp17</LanguageStandard>
     </ClCompile>
     <Link>

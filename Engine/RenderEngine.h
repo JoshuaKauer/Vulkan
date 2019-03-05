@@ -57,6 +57,9 @@ private:
 	VkDescriptorPool descriptorPool;
 	std::vector<VkDescriptorSet> descriptorSets;
 
+	VkImage textureImage;
+	VkDeviceMemory textureImageMemory;
+
 	bool framebufferResized = false;
 
 	void InitWindow();
@@ -82,6 +85,11 @@ private:
 	void CreateUniformBuffers();
 	void CreateDescriptorPool();
 	void CreateDescriptorSets();
+
+	void CreateTextureImage();
+	void CreateImage(uint32_t width, uint32_t height, VkFormat format, VkImageTiling tiling, VkImageUsageFlags usage, VkMemoryPropertyFlags properties, VkImage& image, VkDeviceMemory& imageMemory);
+	void TransitionImageLayout(VkImage image, VkFormat format, VkImageLayout oldLayout, VkImageLayout newLayout);
+	void CopyBufferToImage(VkBuffer buffer, VkImage image, uint32_t width, uint32_t height);
 
 	void UpdateUniformBuffer(uint32_t currentImage);
 
