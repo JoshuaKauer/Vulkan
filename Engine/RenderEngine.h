@@ -93,6 +93,8 @@ private:
 	void CreateDescriptorPool();
 	void CreateDescriptorSets();
 
+	void LoadModel();
+
 	void CreateDepthResources();
 	VkFormat FindDepthFormat();
 	VkFormat FindSupportedFormat(const std::vector<VkFormat>& candidates, VkImageTiling tiling, VkFormatFeatureFlags features);

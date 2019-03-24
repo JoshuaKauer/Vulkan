@@ -7,6 +7,11 @@ struct Vertex
 	glm::vec3 color;
 	glm::vec2 texCoord;
 
+	bool operator==(const Vertex& other) const
+	{
+		return pos == other.pos && color == other.color && texCoord == other.texCoord;
+	}
+
 	static VkVertexInputBindingDescription GetBindingDescription()
 	{
 		VkVertexInputBindingDescription bindingDescription = {};
