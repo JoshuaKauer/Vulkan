@@ -6,8 +6,8 @@
 #include "QueueFamilyIndices.h"
 #include "SwapChainSupportDetails.h"
 #include "Buffer.h"
-#include "Vertex.h"
 #include "Texture.h"
+#include "RenderComponent.h"
 
 class RenderEngine
 {
@@ -52,8 +52,10 @@ private:
 	std::vector<VkFence> inFlightFences;
 	size_t currentFrame = 0;
 
-	std::vector<Vertex> vertices;
-	std::vector<uint32_t> indices;
+	/*std::vector<Vertex> vertices;
+	std::vector<uint32_t> indices;*/
+
+	RenderComponent renderComponent;
 
 	Buffer vertexBuffer;
 	Buffer indexBuffer;
@@ -98,8 +100,6 @@ private:
 	void CreateUniformBuffers();
 	void CreateDescriptorPool();
 	void CreateDescriptorSets();
-
-	void LoadModel();
 
 	void CreateColorResources();
 

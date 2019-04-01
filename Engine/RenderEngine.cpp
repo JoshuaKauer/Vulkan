@@ -7,9 +7,6 @@
 #define GLM_ENABLE_EXPERIMENTAL
 #include <glm/gtx/hash.hpp>
 
-#define TINYOBJLOADER_IMPLEMENTATION
-#include <tiny_obj_loader.h>
-
 #include <chrono>
 #include <iostream>
 #include <cstdlib>
@@ -75,19 +72,6 @@ void DestroyDebugUtilsMessengerEXT(VkInstance instance, VkDebugUtilsMessengerEXT
 	}
 }
 
-namespace std
-{
-	template<> struct hash<Vertex>
-	{
-		size_t operator()(Vertex const& vertex) const
-		{
-			return ((hash<glm::vec3>()(vertex.pos) ^
-					(hash<glm::vec3>()(vertex.color) << 1)) >> 1) ^ 
-					(hash<glm::vec2>()(vertex.texCoord) << 1);
-		}
-	};
-}
-
 void RenderEngine::Run()
 {
 	InitWindow();
@@ -129,10 +113,10 @@ void RenderEngine::InitVulkan()
 	texture.CreateTextureImage(device, physicalDevice, commandPool, graphicsQueue);
 	texture.CreateTextureImageView(device);
 	texture.CreateTextureSampler(device);
-	LoadModel();
-	vertexBuffer.InitializeBuffer(device, vertices.data(), sizeof(vertices[0]) * vertices.size(),
+	renderComponent.LoadModel();
+	vertexBuffer.InitializeBuffer(device, renderComponent.vertices.data(), sizeof(renderComponent.vertices[0]) * renderComponent.vertices.size(),
 		VK_BUFFER_USAGE_TRANSFER_DST_BIT | VK_BUFFER_USAGE_VERTEX_BUFFER_BIT, VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT, commandPool, graphicsQueue, physicalDevice);
-	indexBuffer.InitializeBuffer(device, indices.data(), sizeof(indices[0]) * indices.size(),
+	indexBuffer.InitializeBuffer(device, renderComponent.indices.data(), sizeof(renderComponent.indices[0]) * renderComponent.indices.size(),
 		VK_BUFFER_USAGE_TRANSFER_DST_BIT | VK_BUFFER_USAGE_INDEX_BUFFER_BIT, VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT, commandPool, graphicsQueue, physicalDevice);
 	CreateUniformBuffers();
 	CreateDescriptorPool();
@@ -332,7 +316,7 @@ void RenderEngine::CreateCommandBuffers()
 		vkCmdBindIndexBuffer(commandBuffers[i], indexBuffer.buffer, 0, VK_INDEX_TYPE_UINT32);
 
 		vkCmdBindDescriptorSets(commandBuffers[i], VK_PIPELINE_BIND_POINT_GRAPHICS, pipelineLayout, 0, 1, &descriptorSets[i], 0, nullptr);
-		vkCmdDrawIndexed(commandBuffers[i], static_cast<uint32_t>(indices.size()), 1, 0, 0, 0);
+		vkCmdDrawIndexed(commandBuffers[i], static_cast<uint32_t>(renderComponent.indices.size()), 1, 0, 0, 0);
 
 		vkCmdEndRenderPass(commandBuffers[i]);
 
@@ -778,50 +762,6 @@ void RenderEngine::CreateLogicalDevice()
 
 	vkGetDeviceQueue(device, indices.graphicsFamily.value(), 0, &graphicsQueue);
 	vkGetDeviceQueue(device, indices.presentFamily.value(), 0, &presentQueue);
-}
-
-void RenderEngine::LoadModel()
-{
-	tinyobj::attrib_t attrib;
-	std::vector<tinyobj::shape_t> shapes;
-	std::vector<tinyobj::material_t> materials;
-	std::string warn, err;
-
-	if (!tinyobj::LoadObj(&attrib, &shapes, &materials, &warn, &err, MODEL_PATH.c_str()))
-	{
-		throw std::runtime_error(warn + err);
-	}
-
-	std::unordered_map<Vertex, uint32_t> uniqueVertices = {};
-	int count = 0;
-	for (const auto& shape : shapes)
-	{
-		for (const auto& index : shape.mesh.indices)
-		{
-			Vertex vertex = {};
-
-			vertex.pos = {
-				attrib.vertices[3 * index.vertex_index + 0],
-				attrib.vertices[3 * index.vertex_index + 1],
-				attrib.vertices[3 * index.vertex_index + 2]
-			};
-
-			vertex.texCoord = {
-				attrib.texcoords[2 * index.texcoord_index + 0],
-				1.0f - attrib.texcoords[2 * index.texcoord_index + 1]
-			};
-
-			vertex.color = { 1.0f, 1.0f, 1.0f };
-
-			if (uniqueVertices.count(vertex) == 0)
-			{
-				uniqueVertices[vertex] = static_cast<uint32_t>(vertices.size());
-				vertices.push_back(vertex);
-			}
-
-			indices.push_back(uniqueVertices[vertex]);
-		}
-	}
 }
 
 void RenderEngine::CreateColorResources()
