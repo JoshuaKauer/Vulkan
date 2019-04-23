@@ -9,9 +9,22 @@ void Buffer::InitializeBuffer(VkDevice& device, void* bufferData, VkDeviceSize s
 	VkDeviceMemory stagingBufferMemory;
 	CreateBuffer(device, size, VK_BUFFER_USAGE_TRANSFER_SRC_BIT, VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT | VK_MEMORY_PROPERTY_HOST_COHERENT_BIT, stagingBuffer, stagingBufferMemory, physicalDevice);
 
+	void* data;
+	VkDeviceSize dataSize;
+	if (vertices.size() > 0)
+	{
+		data = vertices.data();
+		dataSize = sizeof(vertices[0]) * vertices.size();
+	}
+	else
+	{
+		data = indices.data();
+		dataSize = sizeof(indices[0]) * indices.size();
+	}
+
 	void* mappedMemoryData;
 	vkMapMemory(device, stagingBufferMemory, 0, size, 0, &mappedMemoryData);
-	memcpy(mappedMemoryData, bufferData, (size_t)size);
+	memcpy(mappedMemoryData, data, (size_t)dataSize);
 	vkUnmapMemory(device, stagingBufferMemory);
 
 	CreateBuffer(device, size, usage, properties, buffer, bufferMemory, physicalDevice);

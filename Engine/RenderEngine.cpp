@@ -6,6 +6,8 @@
 #include <glm/gtc/matrix_transform.hpp>
 #define GLM_ENABLE_EXPERIMENTAL
 #include <glm/gtx/hash.hpp>
+#include "glm/gtx/transform.hpp"
+#include "glm/gtx/string_cast.hpp"
 
 #include <chrono>
 #include <iostream>
@@ -110,14 +112,30 @@ void RenderEngine::InitVulkan()
 	CreateColorResources();
 	CreateDepthResources();
 	CreateFramebuffers();
-	texture.CreateTextureImage(device, physicalDevice, commandPool, graphicsQueue);
-	texture.CreateTextureImageView(device);
-	texture.CreateTextureSampler(device);
-	renderComponent.LoadModel();
-	vertexBuffer.InitializeBuffer(device, renderComponent.vertices.data(), sizeof(renderComponent.vertices[0]) * renderComponent.vertices.size(),
+
+	renderComponent[0].device = &device;
+	renderComponent[0].commandPool = &commandPool;
+	renderComponent[0].graphicsQueue = &graphicsQueue;
+	renderComponent[0].physicalDevice = &physicalDevice;
+	renderComponent[0].pos = glm::vec3(-1.0f, 0.0f, 0.0f);
+	renderComponent[0].Initialize();
+	vertexBuffer.vertices.insert(vertexBuffer.vertices.end(), renderComponent[0].vertices.begin(), renderComponent[0].vertices.end());
+	indexBuffer.indices.insert(indexBuffer.indices.end(), renderComponent[0].indices.begin(), renderComponent[0].indices.end());
+
+	renderComponent[1].device = &device;
+	renderComponent[1].commandPool = &commandPool;
+	renderComponent[1].graphicsQueue = &graphicsQueue;
+	renderComponent[1].physicalDevice = &physicalDevice;
+	renderComponent[1].pos = glm::vec3(1.0f, 0.0f, 0.0f);
+	renderComponent[1].Initialize();
+	vertexBuffer.vertices.insert(vertexBuffer.vertices.end(), renderComponent[1].vertices.begin(), renderComponent[1].vertices.end());
+	indexBuffer.indices.insert(indexBuffer.indices.end(), renderComponent[1].indices.begin(), renderComponent[1].indices.end());
+
+	vertexBuffer.InitializeBuffer(device, renderComponent[0].vertices.data(), sizeof(renderComponent[0].vertices[0]) * renderComponent[0].vertices.size(),
 		VK_BUFFER_USAGE_TRANSFER_DST_BIT | VK_BUFFER_USAGE_VERTEX_BUFFER_BIT, VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT, commandPool, graphicsQueue, physicalDevice);
-	indexBuffer.InitializeBuffer(device, renderComponent.indices.data(), sizeof(renderComponent.indices[0]) * renderComponent.indices.size(),
+	indexBuffer.InitializeBuffer(device, renderComponent[0].indices.data(), sizeof(renderComponent[0].indices[0]) * renderComponent[0].indices.size(),
 		VK_BUFFER_USAGE_TRANSFER_DST_BIT | VK_BUFFER_USAGE_INDEX_BUFFER_BIT, VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT, commandPool, graphicsQueue, physicalDevice);
+
 	CreateUniformBuffers();
 	CreateDescriptorPool();
 	CreateDescriptorSets();
@@ -235,8 +253,8 @@ void RenderEngine::CreateDescriptorSets()
 
 		VkDescriptorImageInfo imageInfo = {};
 		imageInfo.imageLayout = VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL;
-		imageInfo.imageView = texture.textureImageView;
-		imageInfo.sampler = texture.textureSampler;
+		imageInfo.imageView = renderComponent[0].texture.textureImageView;
+		imageInfo.sampler = renderComponent[0].texture.textureSampler;
 
 		std::array<VkWriteDescriptorSet, 2> descriptorWrites = {};
 
@@ -316,7 +334,7 @@ void RenderEngine::CreateCommandBuffers()
 		vkCmdBindIndexBuffer(commandBuffers[i], indexBuffer.buffer, 0, VK_INDEX_TYPE_UINT32);
 
 		vkCmdBindDescriptorSets(commandBuffers[i], VK_PIPELINE_BIND_POINT_GRAPHICS, pipelineLayout, 0, 1, &descriptorSets[i], 0, nullptr);
-		vkCmdDrawIndexed(commandBuffers[i], static_cast<uint32_t>(renderComponent.indices.size()), 1, 0, 0, 0);
+		vkCmdDrawIndexed(commandBuffers[i], static_cast<uint32_t>(renderComponent[0].indices.size() + renderComponent[1].indices.size()), 1, 0, 0, 0);
 
 		vkCmdEndRenderPass(commandBuffers[i]);
 
@@ -639,7 +657,7 @@ void RenderEngine::CreateImageViews()
 
 	for (size_t i = 0; i < swapChainImages.size(); ++i)
 	{
-		swapChainImageViews[i] = texture.CreateImageView(device, swapChainImages[i], swapChainImageFormat, VK_IMAGE_ASPECT_COLOR_BIT, 1);
+		swapChainImageViews[i] = Texture::CreateImageView(device, swapChainImages[i], swapChainImageFormat, VK_IMAGE_ASPECT_COLOR_BIT, 1);
 	}
 }
 
@@ -771,7 +789,7 @@ void RenderEngine::CreateColorResources()
 	Texture::CreateImage(device, physicalDevice, swapChainExtent.width, swapChainExtent.height, 1, msaaSamples, colorFormat,
 		VK_IMAGE_TILING_OPTIMAL, VK_IMAGE_USAGE_TRANSIENT_ATTACHMENT_BIT | VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT, 
 		VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT, colorImage, colorImageMemory);
-	colorImageView = texture.CreateImageView(device, colorImage, colorFormat, VK_IMAGE_ASPECT_COLOR_BIT, 1);
+	colorImageView = Texture::CreateImageView(device, colorImage, colorFormat, VK_IMAGE_ASPECT_COLOR_BIT, 1);
 
 	Texture::TransitionImageLayout(device, commandPool, graphicsQueue, colorImage, colorFormat, VK_IMAGE_LAYOUT_UNDEFINED, VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL, 1);
 }
@@ -781,9 +799,9 @@ void RenderEngine::CreateDepthResources()
 	VkFormat depthFormat = FindDepthFormat();
 	Texture::CreateImage(device, physicalDevice, swapChainExtent.width, swapChainExtent.height, 1, msaaSamples, depthFormat, VK_IMAGE_TILING_OPTIMAL, VK_IMAGE_USAGE_DEPTH_STENCIL_ATTACHMENT_BIT, VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT,
 		depthImage, depthImageMemory);
-	depthImageView = texture.CreateImageView(device, depthImage, depthFormat, VK_IMAGE_ASPECT_DEPTH_BIT, 1);
+	depthImageView = Texture::CreateImageView(device, depthImage, depthFormat, VK_IMAGE_ASPECT_DEPTH_BIT, 1);
 
-	Texture::TransitionImageLayout(device, commandPool, graphicsQueue, depthImage, depthFormat, VK_IMAGE_LAYOUT_UNDEFINED, VK_IMAGE_LAYOUT_DEPTH_STENCIL_ATTACHMENT_OPTIMAL, texture.mipLevels);
+	Texture::TransitionImageLayout(device, commandPool, graphicsQueue, depthImage, depthFormat, VK_IMAGE_LAYOUT_UNDEFINED, VK_IMAGE_LAYOUT_DEPTH_STENCIL_ATTACHMENT_OPTIMAL, renderComponent[0].texture.mipLevels);
 }
 
 VkFormat RenderEngine::FindDepthFormat()
@@ -936,8 +954,10 @@ void RenderEngine::UpdateUniformBuffer(uint32_t currentImage)
 	float time = std::chrono::duration<float, std::chrono::seconds::period>(currentTime - startTime).count();
 
 	ModelViewProjection mvp = {};
-	mvp.model = glm::rotate(glm::mat4(1.0f), time * glm::radians(90.0f), glm::vec3(0.0f, 0.0f, 1.0f));
-	mvp.view = glm::lookAt(glm::vec3(2.0f, 2.0f, 2.0f), glm::vec3(0.0f, 0.0f, 0.0f), glm::vec3(0.0f, 0.0f, 1.0f));
+	mvp.model = glm::mat4(1.0);
+	mvp.model *= glm::translate(renderComponent[currentImage].pos);
+	//mvp.model *= glm::rotate(glm::mat4(1.0f), time * glm::radians(90.0f), glm::vec3(0.0f, 1.0f, 0.0f));
+	mvp.view = glm::lookAt(glm::vec3(2.0f, 2.0f, 2.0f), glm::vec3(0.0f, 0.0f, 0.0f), glm::vec3(0.0f, 1.0f, 0.0f));
 	mvp.proj = glm::perspective(glm::radians(45.0f), swapChainExtent.width / (float)swapChainExtent.height, 0.1f, 10.0f);
 	mvp.proj[1][1] *= -1;
 
@@ -1003,7 +1023,8 @@ void RenderEngine::Cleanup()
 {
 	CleanupSwapChain();
 
-	texture.Cleanup(device);
+	renderComponent[0].CleanUp();
+	renderComponent[1].CleanUp();
 
 	vkDestroyDescriptorPool(device, descriptorPool, nullptr);
 
@@ -1023,7 +1044,6 @@ void RenderEngine::Cleanup()
 		vkDestroySemaphore(device, imageAvailableSemaphores[i], nullptr);
 		vkDestroyFence(device, inFlightFences[i], nullptr);
 	}
-
 
 	vkDestroyCommandPool(device, commandPool, nullptr);
 

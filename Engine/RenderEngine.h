@@ -52,10 +52,7 @@ private:
 	std::vector<VkFence> inFlightFences;
 	size_t currentFrame = 0;
 
-	/*std::vector<Vertex> vertices;
-	std::vector<uint32_t> indices;*/
-
-	RenderComponent renderComponent;
+	RenderComponent renderComponent[2];
 
 	Buffer vertexBuffer;
 	Buffer indexBuffer;
@@ -65,7 +62,7 @@ private:
 	VkDescriptorPool descriptorPool;
 	std::vector<VkDescriptorSet> descriptorSets;
 
-	Texture texture;
+	//Texture texture;
 
 	VkImage depthImage;
 	VkDeviceMemory depthImageMemory;

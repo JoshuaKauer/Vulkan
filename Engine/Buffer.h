@@ -1,12 +1,17 @@
 #pragma once
 
 #include <vulkan/vulkan.h>
+#include <vector>
+#include "Vertex.h"
 
 class Buffer
 {
 public:
 	VkBuffer buffer;
 	VkDeviceMemory bufferMemory;
+
+	std::vector<Vertex> vertices;
+	std::vector<uint32_t> indices;
 
 	void InitializeBuffer(VkDevice& device, void* bufferData, VkDeviceSize size, VkBufferUsageFlags usage,
 		VkMemoryPropertyFlags properties, VkCommandPool& commandPool, VkQueue& graphicsQueue, VkPhysicalDevice& physicalDevice);

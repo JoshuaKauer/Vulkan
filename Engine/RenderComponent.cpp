@@ -20,6 +20,14 @@ namespace std
 	};
 }
 
+void RenderComponent::Initialize()
+{
+	LoadModel();
+	texture.CreateTextureImage(*device, *physicalDevice, *commandPool, *graphicsQueue);
+	texture.CreateTextureImageView(*device);
+	texture.CreateTextureSampler(*device);
+}
+
 void RenderComponent::LoadModel()
 {
 	tinyobj::attrib_t attrib;
@@ -62,4 +70,9 @@ void RenderComponent::LoadModel()
 			indices.push_back(uniqueVertices[vertex]);
 		}
 	}
+}
+
+void RenderComponent::CleanUp()
+{
+	texture.Cleanup(*device);
 }
